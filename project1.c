@@ -158,7 +158,7 @@ char* u2b(int u) {
   }
 
   //adds starting 0s for cleanliness
-  int diff = size % 4;
+  int diff = 4 - ((size+4) % 4);
   char* final = malloc(size + diff + 1);
   for(i=0; i<diff; i++) {
     final[i] = '0';

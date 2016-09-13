@@ -2,7 +2,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+//helper methods
 char detectInput(char *input);
+char* twosComp(char* b);
+int biggestPlace(int u, int i);
+//transformation methods
 char* u2b(int u);
 char* s2b(int s);
 char* h2b(char* x);
@@ -10,8 +14,6 @@ char* b2h(char* b);
 int b2u(char* b);
 int b2s(char* b);
 
-char* twosComp(char* b);
-int biggestPlace(int u, int i);
 
 int main(int argc, char** argv) {
   if (argc != 2){
@@ -83,6 +85,101 @@ int main(int argc, char** argv) {
   }
 }
 
+/*detects which type the input argument is 
+and checks some for validity */
+char detectInput(char* input) {
+  int i;
+  if (input[1] == 'b') {
+  for(i=2; input[i] != '\0'; i++) {
+    if (input[i] != '0' && input[i] != '1')
+      return 'f';
+  }
+    return 'b';
+  } else if (input[1] == 'x') {
+    return 'x';
+  } else if (input[0] == '-') {
+    return 's';
+  } else {
+    return 'u';
+  }
+}
+
+/* returns the twos compliment of a binary number */ 
+char* twosComp(char* binary) {
+  int digits = 0;
+  int i;
+  for(i=0; binary[i] != '\0'; i++) {
+    digits++;
+  }
+  char* result = malloc(digits);
+
+  //flip digits
+  for(i=0; i<digits; i++){
+    if (binary[i] == '0')
+      result[i] = '1';
+    else
+      result[i] = '0';
+  }
+
+  int minusOne = b2u(result);
+  minusOne++;
+  result = u2b(minusOne);
+
+  return result;
+}
+
+/*returns the place of the most significant 1 in the binary of an int*/
+int biggestPlace(int u, int i) {
+  if ((1 << i) > u) {
+    return i-1;
+  } else if ((1 << i) == u) {
+    return i;
+  } else {
+    return biggestPlace(u, i+1);
+  }
+}
+
+/*transforms an unsigned int into binary*/
+char* u2b(int u) {
+  int place = biggestPlace(u, 0);
+  int size = place + 1;
+  char result[size];
+  int i;
+  for(i=0; i<size; i++) {
+    result[i] = '0';
+  }
+  result[0] = '1';
+  u -= (1 << place);
+
+  while (u != 0) {
+    place = biggestPlace(u, 0);
+    result[(size - place - 1)] = '1';
+    u -= (1 << place);
+  }
+
+  //adds starting 0s for cleanliness
+  int diff = 4 - ((size+4) % 4);
+  char* final = malloc(size + diff + 1);
+  for(i=0; i<diff; i++) {
+    final[i] = '0';
+  }
+  for(i=0; i<size; i++){
+    final[i+diff] = result[i];
+  }
+
+  return final;
+}
+
+/* transforms signed int to binary */
+char* s2b(int s) {
+  char* binary = u2b(s * (-1));
+  binary = twosComp(binary);
+  printf("binary after 2s: %s\n", binary);
+
+  return binary;
+}
+
+/* transforms hex to binary */
 char* h2b(char* x) {
   int i, count;
   int digits = 0;
@@ -148,71 +245,7 @@ char* h2b(char* x) {
   return binary;
 }
 
-int b2s(char* b) {
-  int digits = 0;
-  int i;
-  for(i=0; b[i] != '\0'; i++) {
-    digits++;
-  }
-  int count = 0;
-  int first = 1;
-  for(i=0; i<digits; i++) {
-    if (b[i] == '1' && first == 1) {
-      count -= (1 << (digits-i-1));
-      first = 0;
-    } else if (b[i] == '1' && first == 0) {
-      count += (1 << (digits-i-1));
-    }
-  }
-  return count;
-}
-
-int b2u(char* b) {
-  int digits = 0;
-  int i;
-  for(i=0; b[i] != '\0'; i++) {
-    digits++;
-  }
-  int count = 0;
-  for(i=0; i<digits; i++) {
-    if (b[i] == '1') {
-      count += (1 << (digits-i-1));
-    }
-  }
-  return count;
-}
-
-char* s2b(int s) {
-  char* binary = u2b(s * (-1));
-  binary = twosComp(binary);
-  printf("binary after 2s: %s\n", binary);
-
-  return binary;
-}
-
-char* twosComp(char* binary) {
-  int digits = 0;
-  int i;
-  for(i=0; binary[i] != '\0'; i++) {
-    digits++;
-  }
-  char* result = malloc(digits);
-
-  //flip digits
-  for(i=0; i<digits; i++){
-    if (binary[i] == '0')
-      result[i] = '1';
-    else
-      result[i] = '0';
-  }
-
-  int minusOne = b2u(result);
-  minusOne++;
-  result = u2b(minusOne);
-
-  return result;
-}
-
+/*converts a binary decimal to hex*/
 char* b2h(char* b) {
   int digits = 0;
   int i;
@@ -257,58 +290,38 @@ char* b2h(char* b) {
   return result;
 }
 
-char* u2b(int u) {
-  int place = biggestPlace(u, 0);
-  int size = place + 1;
-  char result[size];
+/*transforms binary to unsigned int */
+int b2u(char* b) {
+  int digits = 0;
   int i;
-  for(i=0; i<size; i++) {
-    result[i] = '0';
+  for(i=0; b[i] != '\0'; i++) {
+    digits++;
   }
-  result[0] = '1';
-  u -= (1 << place);
-
-  while (u != 0) {
-    place = biggestPlace(u, 0);
-    result[(size - place - 1)] = '1';
-    u -= (1 << place);
+  int count = 0;
+  for(i=0; i<digits; i++) {
+    if (b[i] == '1') {
+      count += (1 << (digits-i-1));
+    }
   }
-
-  int diff = size % 4;
-  char* final = malloc(size + diff + 1);
-  for(i=0; i<diff; i++) {
-    final[i] = '0';
-  }
-  for(i=0; i<size; i++){
-    final[i+diff] = result[i];
-  }
-
-  return final;
+  return count;
 }
 
-int biggestPlace(int u, int i) {
-  if ((1 << i) > u) {
-    return i-1;
-  } else if ((1 << i) == u) {
-    return i;
-  } else {
-    return biggestPlace(u, i+1);
-  }
-}
-
-char detectInput(char* input) {
+/*transforms binary to signed int */
+int b2s(char* b) {
+  int digits = 0;
   int i;
-  if (input[1] == 'b') {
-  for(i=2; input[i] != '\0'; i++) {
-    if (input[i] != '0' && input[i] != '1')
-      return 'f';
+  for(i=0; b[i] != '\0'; i++) {
+    digits++;
   }
-    return 'b';
-  } else if (input[1] == 'x') {
-    return 'x';
-  } else if (input[0] == '-') {
-    return 's';
-  } else {
-    return 'u';
+  int count = 0;
+  int first = 1;
+  for(i=0; i<digits; i++) {
+    if (b[i] == '1' && first == 1) {
+      count -= (1 << (digits-i-1));
+      first = 0;
+    } else if (b[i] == '1' && first == 0) {
+      count += (1 << (digits-i-1));
+    }
   }
+  return count;
 }
